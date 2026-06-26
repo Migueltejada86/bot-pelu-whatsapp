@@ -1,14 +1,37 @@
 import 'dotenv/config';
 import express from 'express';
+import twilio from 'twilio'; // <- Import normal arriba
+import { google } from 'googleapis';
+
 const app = express();
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+const MessagingResponse = twilio.twiml.MessagingResponse; // <- Acá lo sacás
 
-app.post('/webhook', (req, res) => {
-  const twiml = new (await import('twilio')).twiml.MessagingResponse();
-  twiml.message('Bot Pelu OK. En develop.');
+// 1. Auth Google Calendar
+const auth = new google.auth.GoogleAuth({
+  keyFile: process.env.GOOGLE_CREDENTIALS_PATH,
+  scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+});
+const calendar = google.calendar({ version: 'v3', auth });
+
+let userState = {};
+
+app.post('/webhook', async (req, res) => {
+  const from = req.body.From;
+  const msg = req.body.Body?.trim().toLowerCase();
+  const twiml = new MessagingResponse(); // <- Sin await
+
+  if (!userState[from]) userState[from] = { paso: 'menu' };
+
+  if (userState[from].paso === 'menu') {
+    twiml.message('Hola 👋 Angelito del Fuego\nElegí:\n1. Corte\n2. Color\n3. Ver mis turnos');
+    userState[from].paso = 'servicio';
+  } else {
+    twiml.message('Bot en develop OK. Ya fixee el crash.');
+  }
+  
   res.type('text/xml').send(twiml.toString());
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Bot en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Bot develop en ${PORT}`));
