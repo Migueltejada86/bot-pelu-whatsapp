@@ -31,9 +31,12 @@ app.post('/webhook', async (req, res) => {
   if (!userState[from]) userState[from] = { paso: 'menu' };
 
   // Lógica del bot
-  if (msg === 'hola') {
-    twiml.message('Hola 👋 Angelito del Fuego\nElegí:\n1. Corte\n2. Color\n3. Ver mis turnos');
-    userState[from].paso = 'servicio';
+
+  //
+  if (msg === 'hola') { // <- Ponelo primero siempre
+  userState[from] = { paso: 'menu' }; // Reset
+  twiml.message('Hola 👋 Angelito del Fuego\nElegí:\n1. Corte\n2. Color\n3. Ver mis turnos');
+  userState[from].paso = 'servicio';
   } 
   else if (userState[from].paso === 'servicio') {
     if (msg === '1') {
