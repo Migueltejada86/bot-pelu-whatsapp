@@ -23,41 +23,32 @@ app.get("/", (req, res) => {
 });
 
 // 3. Webhook de Twilio WhatsApp
-app.post('/webhook', async (req, res) => {
-  const from = req.body.From;
-  const msg = req.body.Body?.trim().toLowerCase();
-  const twiml = new MessagingResponse();
+app.post('/webhook', (req, res) => { // <- Sin async
+  try {
+    console.log("LLEGÓ:", req.body.Body); 
+    const from = req.body.From;
+    const msg = req.body.Body?.trim().toLowerCase();
+    const twiml = new MessagingResponse();
 
-  if (!userState[from]) userState[from] = { paso: 'menu' };
-
-  // Lógica del bot
-
-  //
-  if (msg === 'hola') { // <- Ponelo primero siempre
-  userState[from] = { paso: 'menu' }; // Reset
-  twiml.message('Hola 👋 Angelito del Fuego\nElegí:\n1. Corte\n2. Color\n3. Ver mis turnos');
-  userState[from].paso = 'servicio';
-  } 
-  else if (userState[from].paso === 'servicio') {
-    if (msg === '1') {
-      twiml.message('Elegiste Corte ✂️. Próximo paso: elijo fecha.');
-      userState[from].servicio = 'Corte';
-      // Acá después llamamos a calendar.events.list para ver huecos
-    } else if (msg === '2') {
-      twiml.message('Elegiste Color 🎨. Próximo paso: elijo fecha.');
-      userState[from].servicio = 'Color';
-    } else if (msg === '3') {
-      twiml.message('Buscando tus turnos... Próximamente.');
+    if (msg === 'hola') {
+      twiml.message('Hola 👋 Angelito del Fuego\n1. Corte\n2. Color\n3. Ver turnos');
+    } else if (msg === '1') {
+      twiml.message('Elegiste Corte ✂️');
     } else {
-      twiml.message('Opción inválida. Mandá: 1, 2 o 3');
+      twiml.message('Mandá "hola" para empezar'); // <- Siempre responde algo
     }
-  } 
-  else {
-    twiml.message('Mandá "hola" para empezar 👋');
+    
+    res.set('Content-Type', 'application/xml'); // <- Clave
+    res.send(twiml.toString()); // <- Clave
+  } catch (e) {
+    console.error(e);
+    const twiml = new MessagingResponse();
+    twiml.message('Error. Intentá de nuevo.');
+    res.set('Content-Type', 'application/xml');
+    res.send(twiml.toString());
   }
-  
-  res.type('text/xml').send(twiml.toString());
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Bot develop en ${PORT}`));
